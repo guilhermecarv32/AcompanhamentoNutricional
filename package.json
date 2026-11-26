@@ -1,0 +1,46 @@
+{
+  "name": "acompanhamento-nutricional",
+  "private": true,
+  "version": "0.1.0",
+  "description": "App desktop de acompanhamento nutricional",
+  "author": "NutriTrack",
+  "type": "module",
+  "main": "electron/main.mjs",
+  "scripts": {
+    "dev": "concurrently -k \"npm:dev:web\" \"npm:dev:electron\"",
+    "dev:web": "vite",
+    "dev:electron": "cross-env ELECTRON_CACHE=D:\\temp\\electron-cache electron_config_cache=D:\\temp\\electron-cache wait-on http://localhost:5173 && node ./node_modules/electron/cli.js .",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "lint": "oxlint",
+    "start": "cross-env ELECTRON_CACHE=D:\\temp\\electron-cache electron_config_cache=D:\\temp\\electron-cache node ./node_modules/electron/cli.js ."
+  },
+  "dependencies": {
+    "@fontsource/outfit": "^5.3.0",
+    "@fontsource/space-grotesk": "^5.3.0",
+    "date-fns": "^4.4.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-router-dom": "^7.18.7",
+    "recharts": "^3.11.1",
+    "sql.js": "^1.17.0"
+  },
+  "devDependencies": {
+    "@electron-toolkit/preload": "^3.0.2",
+    "@electron-toolkit/utils": "^4.0.0",
+    "@types/node": "^24.19.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@types/sql.js": "^1.16.1",
+    "@vitejs/plugin-react": "^6.1.2",
+    "concurrently": "^10.0.7",
+    "cross-env": "^10.1.0",
+    "electron": "^45.5.0",
+    "electron-builder": "^26.18.0",
+    "electron-vite": "^6.0.0",
+    "oxlint": "^1.90.0",
+    "typescript": "~7.0.2",
+    "vite": "^8.3.6",
+    "wait-on": "^9.5.1"
+  }
+}
