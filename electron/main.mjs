@@ -3,24 +3,58 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import fs from 'node:fs'
 import { createRequire } from 'node:module'
+import { createDietService } from './diet.mjs'
+import { createLogsService } from './logs.mjs'
+import { createMetricsService } from './metrics.mjs'
 
 const require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const isDev = !app.isPackaged
+const PROJECT_ROOT = path.resolve(__dirname, '..')
 
-/** Tudo de dados do app fica no D:, nunca no userData padrão do Windows (C:). */
-const APP_ROOT = isDev
-  ? path.resolve(__dirname, '..')
-  : path.dirname(process.execPath)
-const DATA_DIR = path.join(APP_ROOT, 'data')
+/**
+ * Dados sempre no D:.
+ * - Dev: pasta data do projeto
+ * - Instalado: D:\NutriTrack\data
+ */
+const DATA_DIR = isDev
+  ? path.join(PROJECT_ROOT, 'data')
+  : path.join('D:', 'NutriTrack', 'data')
 const DB_PATH = path.join(DATA_DIR, 'nutri.db')
 
 fs.mkdirSync(DATA_DIR, { recursive: true })
+
+function resolveWasmPath() {
+  if (isDev) {
+    return path.join(
+      PROJECT_ROOT,
+      'node_modules',
+      'sql.js',
+      'dist',
+      'sql-wasm.wasm',
+    )
+  }
+
+  return path.join(
+    process.resourcesPath,
+    'app.asar.unpacked',
+    'node_modules',
+    'sql.js',
+    'dist',
+    'sql-wasm.wasm',
+  )
+}
 
 /** @type {import('sql.js').Database | null} */
 let db = null
 /** @type {import('sql.js').SqlJsStatic | null} */
 let SQL = null
+/** @type {ReturnType<typeof createDietService> | null} */
+let diet = null
+/** @type {ReturnType<typeof createLogsService> | null} */
+let logs = null
+/** @type {ReturnType<typeof createMetricsService> | null} */
+let metrics = null
 
 function persist() {
   if (!db) return
@@ -159,13 +193,7 @@ function queryOne(sql, params = []) {
 
 async function initDatabase() {
   const initSqlJs = require('sql.js')
-  const wasmPath = path.join(
-    APP_ROOT,
-    'node_modules',
-    'sql.js',
-    'dist',
-    'sql-wasm.wasm',
-  )
+  const wasmPath = resolveWasmPath()
   SQL = await initSqlJs({
     locateFile: () => wasmPath,
   })
@@ -179,6 +207,24 @@ async function initDatabase() {
 
   db.run('PRAGMA foreign_keys = ON;')
   runMigrations(db)
+  diet = createDietService({
+    queryAll,
+    queryOne,
+    persist,
+    getDb: () => db,
+  })
+  logs = createLogsService({
+    queryAll,
+    queryOne,
+    persist,
+    getDb: () => db,
+  })
+  metrics = createMetricsService({
+    queryAll,
+    queryOne,
+    persist,
+    getDb: () => db,
+  })
   persist()
 }
 
@@ -211,7 +257,7 @@ function createWindow() {
     win.loadURL('http://localhost:5173')
     win.webContents.openDevTools({ mode: 'detach' })
   } else {
-    win.loadFile(path.join(APP_ROOT, 'dist', 'index.html'))
+    win.loadFile(path.join(app.getAppPath(), 'dist', 'index.html'))
   }
 }
 
@@ -280,6 +326,106 @@ function registerIpc() {
     dataDir: DATA_DIR,
     dbPath: DB_PATH,
   }))
+
+  ipcMain.handle('db:diet:list', (_event, profileId) => {
+    return diet.listMeals(profileId)
+  })
+
+  ipcMain.handle('db:diet:get', (_event, id) => {
+    return diet.getMeal(id)
+  })
+
+  ipcMain.handle('db:diet:create', (_event, { profileId, meal }) => {
+    return diet.createMeal(profileId, meal)
+  })
+
+  ipcMain.handle('db:diet:update', (_event, { id, meal }) => {
+    return diet.updateMeal(id, meal)
+  })
+
+  ipcMain.handle('db:diet:delete', (_event, id) => {
+    return diet.deleteMeal(id)
+  })
+
+  ipcMain.handle('db:logs:listByDay', (_event, { profileId, day }) => {
+    return logs.listByDay(profileId, day)
+  })
+
+  ipcMain.handle('db:logs:listByRange', (_event, { profileId, fromDay, toDay }) => {
+    return logs.listByRange(profileId, fromDay, toDay)
+  })
+
+  ipcMain.handle('db:logs:get', (_event, id) => {
+    return logs.getLog(id)
+  })
+
+  ipcMain.handle('db:logs:create', (_event, { profileId, log }) => {
+    return logs.createLog(profileId, log)
+  })
+
+  ipcMain.handle('db:logs:update', (_event, { id, log }) => {
+    return logs.updateLog(id, log)
+  })
+
+  ipcMain.handle('db:logs:delete', (_event, id) => {
+    return logs.deleteLog(id)
+  })
+
+  ipcMain.handle('db:metrics:summary', (_event, profileId) => {
+    return metrics.getLatestSummary(profileId)
+  })
+
+  ipcMain.handle('db:metrics:weights:list', (_event, { profileId, limit }) => {
+    return metrics.listWeights(profileId, limit)
+  })
+
+  ipcMain.handle('db:metrics:weights:create', (_event, { profileId, payload }) => {
+    return metrics.createWeight(profileId, payload)
+  })
+
+  ipcMain.handle('db:metrics:weights:update', (_event, { id, payload }) => {
+    return metrics.updateWeight(id, payload)
+  })
+
+  ipcMain.handle('db:metrics:weights:delete', (_event, id) => {
+    return metrics.deleteWeight(id)
+  })
+
+  ipcMain.handle('db:metrics:body:list', (_event, { profileId, limit }) => {
+    return metrics.listBodyMetrics(profileId, limit)
+  })
+
+  ipcMain.handle('db:metrics:body:create', (_event, { profileId, payload }) => {
+    return metrics.createBodyMetrics(profileId, payload)
+  })
+
+  ipcMain.handle('db:metrics:body:delete', (_event, id) => {
+    return metrics.deleteBodyMetrics(id)
+  })
+
+  ipcMain.handle('db:metrics:workouts:list', (_event, { profileId, limit }) => {
+    return metrics.listWorkouts(profileId, limit)
+  })
+
+  ipcMain.handle('db:metrics:workouts:create', (_event, { profileId, payload }) => {
+    return metrics.createWorkout(profileId, payload)
+  })
+
+  ipcMain.handle('db:metrics:workouts:delete', (_event, id) => {
+    return metrics.deleteWorkout(id)
+  })
+
+  ipcMain.handle('db:metrics:sleep:list', (_event, { profileId, limit }) => {
+    return metrics.listSleep(profileId, limit)
+  })
+
+  ipcMain.handle('db:metrics:sleep:create', (_event, { profileId, payload }) => {
+    return metrics.createSleep(profileId, payload)
+  })
+
+  ipcMain.handle('db:metrics:sleep:delete', (_event, id) => {
+    return metrics.deleteSleep(id)
+  })
 
   ipcMain.handle('window:minimize', (event) => {
     BrowserWindow.fromWebContents(event.sender)?.minimize()

@@ -4,16 +4,16 @@ import { HashDoodle, SparkDoodle } from './Doodles'
 import './Layout.css'
 
 const links = [
-  { to: '/', label: 'Início', end: true },
-  { to: '/dieta', label: 'Dieta' },
-  { to: '/registrar', label: 'Registrar' },
-  { to: '/andamento', label: 'Andamento' },
-  { to: '/metricas', label: 'Métricas' },
-  { to: '/dashboard', label: 'Dashboard' },
+  { to: '/', label: 'Início', end: true, requiresSetup: false },
+  { to: '/dieta', label: 'Dieta', requiresSetup: false },
+  { to: '/metricas', label: 'Métricas', requiresSetup: false },
+  { to: '/registrar', label: 'Registrar', requiresSetup: true },
+  { to: '/andamento', label: 'Andamento', requiresSetup: true },
+  { to: '/dashboard', label: 'Dashboard', requiresSetup: true },
 ]
 
 export function Layout() {
-  const { activeProfile, theme, toggleTheme, selectProfile } = useApp()
+  const { activeProfile, theme, toggleTheme, selectProfile, setup } = useApp()
 
   return (
     <div className="app-shell layout">
@@ -22,24 +22,42 @@ export function Layout() {
           <span className="brand-mark">AN</span>
           <div>
             <strong>NutriTrack</strong>
-            <p>acompanhamento jovial</p>
+            <p>
+              {setup.complete
+                ? 'acompanhamento jovial'
+                : 'configure dieta + peso'}
+            </p>
           </div>
           <HashDoodle className="brand-hash" />
         </div>
 
         <nav className="nav">
-          {links.map((link) => (
-            <NavLink
-              key={link.to}
-              to={link.to}
-              end={link.end}
-              className={({ isActive }) =>
-                isActive ? 'nav-link active' : 'nav-link'
-              }
-            >
-              {link.label}
-            </NavLink>
-          ))}
+          {links.map((link) => {
+            const locked = link.requiresSetup && !setup.complete
+            return (
+              <NavLink
+                key={link.to}
+                to={locked ? '/' : link.to}
+                end={link.end}
+                title={
+                  locked
+                    ? 'Cadastre dieta e peso para liberar'
+                    : undefined
+                }
+                className={({ isActive }) =>
+                  [
+                    'nav-link',
+                    isActive && !locked ? 'active' : '',
+                    locked ? 'locked' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')
+                }
+              >
+                {link.label}
+              </NavLink>
+            )
+          })}
         </nav>
 
         <div className="topbar-actions">

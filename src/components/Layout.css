@@ -86,6 +86,10 @@
   color: var(--color-accent-ink);
 }
 
+.nav-link.locked {
+  opacity: 0.42;
+}
+
 .topbar-actions {
   display: flex;
   align-items: center;

@@ -12,12 +12,21 @@ import type { Profile } from '../vite-env'
 
 export type ThemeMode = 'light' | 'dark'
 
+export type SetupStatus = {
+  loading: boolean
+  hasDiet: boolean
+  hasWeight: boolean
+  complete: boolean
+}
+
 type AppContextValue = {
   ready: boolean
   profiles: Profile[]
   activeProfile: Profile | null
   theme: ThemeMode
+  setup: SetupStatus
   refreshProfiles: () => Promise<void>
+  refreshSetup: () => Promise<void>
   createProfile: (name: string) => Promise<Profile>
   selectProfile: (profile: Profile | null) => Promise<void>
   deleteProfile: (id: number) => Promise<void>
@@ -30,12 +39,20 @@ const AppContext = createContext<AppContextValue | null>(null)
 const ACTIVE_PROFILE_KEY = 'activeProfileId'
 const THEME_KEY = 'theme'
 
+const emptySetup: SetupStatus = {
+  loading: true,
+  hasDiet: false,
+  hasWeight: false,
+  complete: false,
+}
+
 export function AppProvider({ children }: { children: ReactNode }) {
   const api = useMemo(() => getApi(), [])
   const [ready, setReady] = useState(false)
   const [profiles, setProfiles] = useState<Profile[]>([])
   const [activeProfile, setActiveProfile] = useState<Profile | null>(null)
   const [theme, setThemeState] = useState<ThemeMode>('light')
+  const [setup, setSetup] = useState<SetupStatus>(emptySetup)
 
   const applyTheme = useCallback((next: ThemeMode) => {
     document.documentElement.setAttribute('data-theme', next)
@@ -47,6 +64,36 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setProfiles(list)
     return list
   }, [api])
+
+  const refreshSetup = useCallback(async () => {
+    if (!activeProfile) {
+      setSetup(emptySetup)
+      return
+    }
+
+    setSetup((prev) => ({ ...prev, loading: true }))
+    try {
+      const [meals, weights] = await Promise.all([
+        api.listDietMeals(activeProfile.id),
+        api.listWeights(activeProfile.id, 1),
+      ])
+      const hasDiet = meals.length > 0
+      const hasWeight = weights.length > 0
+      setSetup({
+        loading: false,
+        hasDiet,
+        hasWeight,
+        complete: hasDiet && hasWeight,
+      })
+    } catch {
+      setSetup({
+        loading: false,
+        hasDiet: false,
+        hasWeight: false,
+        complete: false,
+      })
+    }
+  }, [activeProfile, api])
 
   useEffect(() => {
     let cancelled = false
@@ -76,6 +123,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       cancelled = true
     }
   }, [api, applyTheme])
+
+  useEffect(() => {
+    void refreshSetup()
+  }, [refreshSetup])
 
   const createProfile = useCallback(
     async (name: string) => {
@@ -129,9 +180,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       profiles,
       activeProfile,
       theme,
+      setup,
       refreshProfiles: async () => {
         await refreshProfiles()
       },
+      refreshSetup,
       createProfile,
       selectProfile,
       deleteProfile,
@@ -143,7 +196,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       profiles,
       activeProfile,
       theme,
+      setup,
       refreshProfiles,
+      refreshSetup,
       createProfile,
       selectProfile,
       deleteProfile,

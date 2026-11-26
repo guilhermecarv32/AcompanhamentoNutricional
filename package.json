@@ -11,6 +11,7 @@
     "dev:web": "vite",
     "dev:electron": "cross-env ELECTRON_CACHE=D:\\temp\\electron-cache electron_config_cache=D:\\temp\\electron-cache wait-on http://localhost:5173 && node ./node_modules/electron/cli.js .",
     "build": "tsc -b && vite build",
+    "dist:win": "npm run build && cross-env ELECTRON_CACHE=D:\\temp\\electron-cache electron_config_cache=D:\\temp\\electron-cache ELECTRON_BUILDER_CACHE=D:\\temp\\electron-builder-cache electron-builder --win nsis",
     "preview": "vite preview",
     "lint": "oxlint",
     "start": "cross-env ELECTRON_CACHE=D:\\temp\\electron-cache electron_config_cache=D:\\temp\\electron-cache node ./node_modules/electron/cli.js ."
@@ -42,5 +43,45 @@
     "typescript": "~7.0.2",
     "vite": "^8.3.6",
     "wait-on": "^9.5.1"
+  },
+  "build": {
+    "appId": "com.nutritrack.app",
+    "productName": "NutriTrack",
+    "copyright": "NutriTrack",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "asarUnpack": [
+      "**/node_modules/sql.js/dist/sql-wasm.wasm"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "NutriTrack-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "NutriTrack",
+      "installerLanguages": [
+        "pt_BR"
+      ]
+    }
   }
 }
