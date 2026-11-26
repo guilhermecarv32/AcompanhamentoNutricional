@@ -1,5 +1,17 @@
-.boot-screen {
+.app-frame {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-frame > .app-shell,
+.app-frame > .layout {
+  flex: 1;
+}
+
+.boot-screen {
+  min-height: 0;
+  flex: 1;
   display: grid;
   place-content: center;
   text-align: center;

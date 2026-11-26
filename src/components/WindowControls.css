@@ -1,0 +1,91 @@
+.window-chrome {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  height: 36px;
+  flex-shrink: 0;
+}
+
+.window-drag {
+  -webkit-app-region: drag;
+  app-region: drag;
+  height: 100%;
+}
+
+.window-controls {
+  display: flex;
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.win-btn {
+  width: 46px;
+  height: 36px;
+  border: 0;
+  background: transparent;
+  color: var(--color-secondary);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  opacity: 0.85;
+  transition:
+    background 120ms ease,
+    opacity 120ms ease;
+}
+
+.win-btn:hover {
+  opacity: 1;
+  background: rgba(253, 253, 255, 0.12);
+}
+
+.win-btn.win-close:hover {
+  background: #e81123;
+}
+
+.win-icon {
+  display: block;
+  width: 10px;
+  height: 10px;
+  position: relative;
+}
+
+.win-min {
+  border-bottom: 1.5px solid currentColor;
+  height: 0;
+  width: 10px;
+}
+
+.win-max {
+  border: 1.5px solid currentColor;
+  width: 10px;
+  height: 10px;
+  border-radius: 1px;
+}
+
+.win-restore {
+  width: 8px;
+  height: 8px;
+  border: 1.5px solid currentColor;
+  box-shadow: 2px -2px 0 -0.5px transparent, 2px -2px 0 0 currentColor;
+}
+
+.win-x::before,
+.win-x::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 12px;
+  height: 1.5px;
+  background: currentColor;
+}
+
+.win-x::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.win-x::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}

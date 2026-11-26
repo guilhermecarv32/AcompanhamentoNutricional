@@ -15,6 +15,10 @@ export type AppApi = {
   getSetting: (key: string) => Promise<string | null>
   setSetting: (key: string, value: string) => Promise<{ ok: boolean }>
   getPaths: () => Promise<{ dataDir: string; dbPath: string }>
+  minimizeWindow?: () => Promise<void>
+  maximizeToggle?: () => Promise<boolean>
+  closeWindow?: () => Promise<void>
+  isWindowMaximized?: () => Promise<boolean>
 }
 
 declare global {

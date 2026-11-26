@@ -10,4 +10,8 @@ contextBridge.exposeInMainWorld('api', {
   setSetting: (key, value) =>
     ipcRenderer.invoke('db:settings:set', { key, value }),
   getPaths: () => ipcRenderer.invoke('app:getPaths'),
+  minimizeWindow: () => ipcRenderer.invoke('window:minimize'),
+  maximizeToggle: () => ipcRenderer.invoke('window:maximizeToggle'),
+  closeWindow: () => ipcRenderer.invoke('window:close'),
+  isWindowMaximized: () => ipcRenderer.invoke('window:isMaximized'),
 })

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow, ipcMain, Menu } from 'electron'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import fs from 'node:fs'
@@ -183,19 +183,28 @@ async function initDatabase() {
 }
 
 function createWindow() {
+  Menu.setApplicationMenu(null)
+
   const win = new BrowserWindow({
     width: 1280,
     height: 840,
     minWidth: 1024,
     minHeight: 680,
     backgroundColor: '#f42902',
-    title: 'Acompanhamento Nutricional',
+    title: 'NutriTrack',
+    frame: false,
+    autoHideMenuBar: true,
+    show: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
     },
+  })
+
+  win.once('ready-to-show', () => {
+    win.show()
   })
 
   if (isDev) {
@@ -271,6 +280,29 @@ function registerIpc() {
     dataDir: DATA_DIR,
     dbPath: DB_PATH,
   }))
+
+  ipcMain.handle('window:minimize', (event) => {
+    BrowserWindow.fromWebContents(event.sender)?.minimize()
+  })
+
+  ipcMain.handle('window:maximizeToggle', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (!win) return false
+    if (win.isMaximized()) {
+      win.unmaximize()
+      return false
+    }
+    win.maximize()
+    return true
+  })
+
+  ipcMain.handle('window:close', (event) => {
+    BrowserWindow.fromWebContents(event.sender)?.close()
+  })
+
+  ipcMain.handle('window:isMaximized', (event) => {
+    return BrowserWindow.fromWebContents(event.sender)?.isMaximized() ?? false
+  })
 }
 
 app.whenReady().then(async () => {

@@ -53,6 +53,14 @@ function browserFallback(): AppApi {
     async getPaths() {
       return { dataDir: '(memória)', dbPath: '(memória)' }
     },
+    async minimizeWindow() {},
+    async maximizeToggle() {
+      return false
+    },
+    async closeWindow() {},
+    async isWindowMaximized() {
+      return false
+    },
   }
 }
 
